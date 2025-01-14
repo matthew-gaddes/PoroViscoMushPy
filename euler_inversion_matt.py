@@ -76,7 +76,7 @@ def euler_inversion(f_s, t, M=32):
             denominator *= i
         return numerator / denominator
 
-    # Build xi array (using Shailza's fix)
+    # Build xi array
     xi = np.zeros(2 * M + 1, dtype=float)
     xi[0] = 0.5
     xi[1:M+1] = 1.0       # Set xi[1] to xi[M] to 1.0
@@ -116,6 +116,7 @@ def euler_inversion(f_s, t, M=32):
     
     # Similarly for eta:
     eta_mesh = np.meshgrid(eta, t, indexing='xy')[0]  # same shape as beta_mesh
+    
     # quick_matrix_plot(np.real(beta_mesh)); quick_matrix_plot(np.imag(beta_mesh))
     # quick_matrix_plot(np.real(t_mesh)); quick_matrix_plot(np.imag(t_mesh))    
     # print(beta_mesh[0,0])
@@ -123,9 +124,12 @@ def euler_inversion(f_s, t, M=32):
     # print(beta_mesh[0,0] / t_mesh[0,0])
     
     
-    ############################ three  approaches to calculate s_vals
-    ######## V1 implementation - different to matlab (value in first row)
-    s_vals = beta_mesh / t_mesh  # shape = (2M+1, len(t))
+    ######## V1 implementation
+    # Evaluate f_s at all points in beta_mesh / t_mesh
+    # We'll do elementwise division first:
+    # note that in the original implementation, this is not done explicitly
+    # (i.e. s_vals is not computed)
+    # s_vals = beta_mesh / t_mesh  # shape = (2M+1, len(t))
     # quick_matrix_plot(np.real(s_vals)); quick_matrix_plot(np.imag(s_vals))    
     
     
@@ -157,21 +161,29 @@ def euler_inversion(f_s, t, M=32):
     #             )
     # quick_matrix_plot(np.real(s_vals)); quick_matrix_plot(np.imag(s_vals))    
     
-    ############## v3 - load matlab data of s_vals from 1st part of example
-    # from scipy.io import loadmat
-    # # Load the .mat file
-    # data_dict = loadmat('./s_vals.mat')
-    # s_vals = data_dict['s_vals']
-    # quick_matrix_plot(np.real(s_vals)); quick_matrix_plot(np.imag(s_vals))    
-    
-    ############################ end three approaches to calculate s_vals
+    # # print(safe_divide(beta_mesh[0, 0], t_mesh[0, 0]))
     
 
-    # calculate F_vals
+
+    # ##### v1 - python data
     # # f_s is not vectorised, so make a pseudo vectorised version using numpy.  
     # # (i.e. elementwise approach, but can pass an array to it)
+    # f_s_vectorized = np.vectorize(f_s)
+    # F_vals = f_s_vectorized(s_vals)  # shape = (2M+1, len(t)) 
+    
+    
+    
+    ############## v2 - load matlab data
+    from scipy.io import loadmat
+    # Load the .mat file
+    data_dict = loadmat('./s_vals.mat')
+    s_vals = data_dict['s_vals']
+    quick_matrix_plot(np.real(s_vals)); quick_matrix_plot(np.imag(s_vals))    
+    
     f_s_vectorized = np.vectorize(f_s)
     F_vals = f_s_vectorized(s_vals)  # shape = (2M+1, len(t)) 
+    
+    
     
     
     # Now, we take real(...) of that:

@@ -7,6 +7,7 @@ Created on Thu Jan  9 15:20:57 2025
 """
 
 import numpy as np
+import pdb
 
 def Laplace_Pl(s, alpha, phi_o, r_ratio,
                KsMr, KfMr, KlMr, MmMr,
@@ -63,6 +64,9 @@ def Laplace_Pl(s, alpha, phi_o, r_ratio,
        Int_s is a hyperbolic function ratio from the symbolic derivation.
     5. This function is written for scalar s. For arrays, loop or vectorize.
     """
+    
+
+
 
     # 1) Basic parameter definitions
     KfKs = KfMr / KsMr
@@ -119,7 +123,9 @@ def Laplace_Pl(s, alpha, phi_o, r_ratio,
     Ga = E0*(C2 + D2 + 1.0)
     Gb = C3 - 3.0*KlMr*r_ratio
     ro = r_ratio**(-1.0/3.0)
-    Ro = r_ratio**(1.0/3.0)  # new variable from the code
+    Ro = r_ratio**(1.0/3.0)  # new variable from the code 
+   
+    
 
     g2 = Ga + Gb
     A = (
@@ -183,5 +189,7 @@ def Laplace_Pl(s, alpha, phi_o, r_ratio,
     # 8) Final expression for Pl_s
     #    Pl_s = f4 - KlMr*(3*r_ratio*Int_s + 3*Ro*u0_s)
     Pl_s = f4 - KlMr*(3.0*r_ratio*Int_s + 3.0*Ro*u0_s)
+
+    # pdb.set_trace()
 
     return Pl_s

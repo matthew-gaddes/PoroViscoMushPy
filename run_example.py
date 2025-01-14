@@ -27,6 +27,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat, savemat
 
+import pdb
+
 
 
 # 1) Import your Python versions of these functions:
@@ -37,6 +39,8 @@ from scipy.io import loadmat, savemat
 def main():
     """
     """
+    
+    print(f"Starting the example.  ")
     
     from get_Pl import get_Pl
     from get_M import get_M
@@ -51,6 +55,8 @@ def main():
     # -----------------------------------------------------------------------
     data = loadmat('data/parameter_example.mat')
     
+    
+    pdb.set_trace()
     
     # Extract variables from the dictionary:
     # (Keys might differ depending on how they were saved; 
@@ -85,6 +91,9 @@ def main():
     plt.title('Pressure Evolution')
     plt.legend()
     plt.savefig('results/pressure_evolution.png', dpi=150)
+    
+    pdb.set_trace()
+    
     plt.close()
 
     # -----------------------------------------------------------------------

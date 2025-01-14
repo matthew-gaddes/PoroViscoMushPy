@@ -8,22 +8,6 @@ Created on Thu Jan  9 13:36:05 2025
 
 import numpy as np
 import pdb
-import matplotlib.pyplot as plt
-
-    
-#%%
-def quick_matrix_plot(matrix, aspect = 'auto'):
-    """
-    """
-    import matplotlib.pyplot as plt
-    f, ax = plt.subplots(1)
-    #im = ax.matshow(matrix)
-    im = ax.imshow(matrix, aspect = aspect)
-    f.colorbar(im, ax = ax)
-
-#%%
-
-
 
 def euler_inversion(f_s, t, M=32):
     """
@@ -76,11 +60,11 @@ def euler_inversion(f_s, t, M=32):
             denominator *= i
         return numerator / denominator
 
-    # Build xi array (using Shailza's fix)
+    # Build xi array
     xi = np.zeros(2 * M + 1, dtype=float)
     xi[0] = 0.5
-    xi[1:M+1] = 1.0       # Set xi[1] to xi[M] to 1.0
-    xi[M+1:2*M] = 0.0      # Ensure xi[M+1] to xi[2*M-1] are 0.0
+    xi[1] = 1.0
+    xi[M] = 1.0
     xi[2*M] = 2.0 ** (-M)
     
     # Fill middle portion of xi (corresponding to k=1 to M-1 in the for-loop)
@@ -94,14 +78,7 @@ def euler_inversion(f_s, t, M=32):
     k_vals = np.arange(0, 2*M+1, dtype=float)
     
     # Compute beta and eta
-    # beta is comlex, (65,) in example
-    beta = (M * np.log(10) / 3.0) + 1j * np.pi * k_vals         
-    # quick_matrix_plot(np.real(beta[:,np.newaxis]), aspect = 1e-1)
-    # quick_matrix_plot(np.imag(beta[:,np.newaxis]), aspect = 1e-1)
-    
-    
-
-    
+    beta = (M * np.log(10) / 3.0) + 1j * np.pi * k_vals
     # In MATLAB: eta = (1 - mod(k,2)*2) .* xi
     # => mod(k,2) is 0 or 1. If 0, (1 - 0*2)=1; if 1, (1-2)= -1
     # => This flips sign for odd k.
@@ -116,69 +93,22 @@ def euler_inversion(f_s, t, M=32):
     
     # Similarly for eta:
     eta_mesh = np.meshgrid(eta, t, indexing='xy')[0]  # same shape as beta_mesh
-    # quick_matrix_plot(np.real(beta_mesh)); quick_matrix_plot(np.imag(beta_mesh))
-    # quick_matrix_plot(np.real(t_mesh)); quick_matrix_plot(np.imag(t_mesh))    
-    # print(beta_mesh[0,0])
-    # print(t_mesh[0,0])
-    # print(beta_mesh[0,0] / t_mesh[0,0])
     
-    
-    ############################ three  approaches to calculate s_vals
-    ######## V1 implementation - different to matlab (value in first row)
+    # Evaluate f_s at all points in beta_mesh / t_mesh
+    # We'll do elementwise division first:
+    # note that in the original implementation, this is not done explicitly
+    # (i.e. s_vals is not computed)
     s_vals = beta_mesh / t_mesh  # shape = (2M+1, len(t))
-    # quick_matrix_plot(np.real(s_vals)); quick_matrix_plot(np.imag(s_vals))    
-    
-    
-    # ###### V2 implementation
-    # def safe_divide(a, b):
-    #     """
-    #     Replicates MATLAB-like division by zero for purely real a/b:
-    #       - If b==0, return float('inf') or float('-inf') depending on sign of a.
-    #       - Otherwise do normal division.
-    #     """
-    #     if np.all(np.isreal(a)) and np.all(np.isreal(b)):
-    #         # If both are purely real
-    #         if b == 0:
-    #             return float('inf') if a > 0 else float('-inf') if a < 0 else np.nan
-    #         else:
-    #             return a / b
-    #     else:
-    #         # If there's an imaginary part, Python will produce something
-    #         # like inf+nanj, which may not match MATLAB exactly for complex zeros.
-    #         # You can decide how you want to handle that. For now, do normal division:
-    #         return a / b
-    
-    # n_rows, n_cols = beta_mesh.shape
-    # s_vals = np.zeros((n_rows, n_cols))
-    # for row_n in range(n_rows):
-    #     for col_n in range(n_cols):
-    #         s_vals[row_n, col_n] = safe_divide(
-    #             beta_mesh[row_n, col_n], t_mesh[row_n, col_n]
-    #             )
-    # quick_matrix_plot(np.real(s_vals)); quick_matrix_plot(np.imag(s_vals))    
-    
-    ############## v3 - load matlab data of s_vals from 1st part of example
-    # from scipy.io import loadmat
-    # # Load the .mat file
-    # data_dict = loadmat('./s_vals.mat')
-    # s_vals = data_dict['s_vals']
-    # quick_matrix_plot(np.real(s_vals)); quick_matrix_plot(np.imag(s_vals))    
-    
-    ############################ end three approaches to calculate s_vals
     
 
-    # calculate F_vals
-    # # f_s is not vectorised, so make a pseudo vectorised version using numpy.  
-    # # (i.e. elementwise approach, but can pass an array to it)
-    f_s_vectorized = np.vectorize(f_s)
-    F_vals = f_s_vectorized(s_vals)  # shape = (2M+1, len(t)) 
     
+    # If f_s is truly vectorized, we can call it once on the entire s_vals.
+    # Otherwise, you may need np.vectorize.
+    f_s_vectorized = np.vectorize(f_s)
+    F_vals = f_s_vectorized(s_vals)  # shape = (2M+1, len(t)) if vectorized
     
     # Now, we take real(...) of that:
     real_F_vals = np.real(F_vals)
-    # quick_matrix_plot(real_F_vals)
-    # pdb.set_trace()
-
     
     # Multiply by eta_mesh, then sum over k (the 'row' in this shape),
     # because in MATLAB sum(..., 2) means "sum across columns for each row".
@@ -189,10 +119,8 @@ def euler_inversion(f_s, t, M=32):
     #   beta_mesh.shape = (2M+1, len(t))
     #   t_mesh.shape    = (2M+1, len(t))
     # Summation "over k" => sum along axis=0 in this shape, leaving len(t) elements.
+    
     summation = np.sum(eta_mesh * real_F_vals, axis=1)  # shape: (len(t),)
-
-    
-    
     
     # Finally, multiply by 10^(M/3) / t (elementwise).
     # 10^(M/3) is the same as 10**(M/3.0).
